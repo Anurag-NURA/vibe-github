@@ -1,5 +1,14 @@
-import { prisma } from "../src/lib/prisma";
-import { Prisma } from "../src/generated/prisma/client";
+import { PrismaClient, Prisma } from "../src/generated/prisma/client";
+import { PrismaNeon } from "@prisma/adapter-neon";
+import "dotenv/config";
+
+const adapter = new PrismaNeon({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+  adapter,
+});
 
 const userData: Prisma.UserCreateInput[] = [
   {
