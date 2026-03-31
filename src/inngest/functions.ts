@@ -4,16 +4,23 @@ import {
   openai,
   createTool,
   createNetwork,
+  type Tool,
 } from "@inngest/agent-kit";
 import { z } from "zod";
 
 import { inngest } from "./client";
+import { prisma } from "@/lib/prisma";
 import { getSandbox, lastAssistantTextMessageContent } from "./utils";
 import { PROMPT } from "@/prompt";
 
-export const vibeAgent = inngest.createFunction(
-  { id: "vibe-agent" },
-  { event: "test/vibe-agent" },
+interface AgentState {
+  summary: string;
+  files: { [path: string]: string };
+}
+
+export const codeAgentFunction = inngest.createFunction(
+  { id: "code-agent" },
+  { event: "code-agent/run" },
   async ({ event, step }) => {
     const sandboxId = await step.run("get-sandbox-id", async () => {
       const sandbox = await Sandbox.create("anuragrawatz3k/vibe-nextjs-test", {
@@ -22,7 +29,7 @@ export const vibeAgent = inngest.createFunction(
       return sandbox.sandboxId;
     });
 
-    const codeAgent = createAgent({
+    const codeAgent = createAgent<AgentState>({
       name: "summarizer",
       system: PROMPT,
       model: openai({
@@ -81,7 +88,10 @@ export const vibeAgent = inngest.createFunction(
               }),
             ),
           }),
-          handler: async ({ files }, { step, network }) => {
+          handler: async (
+            { files },
+            { step, network }: Tool.Options<AgentState>,
+          ) => {
             /*
              *Earlier AI was only providing us the components
              *but now AI will also provide us the file paths,
@@ -159,7 +169,7 @@ export const vibeAgent = inngest.createFunction(
       },
     });
 
-    const network = createNetwork({
+    const network = createNetwork<AgentState>({
       name: "code-agent-network",
       agents: [codeAgent],
       maxIter: 15,
@@ -178,10 +188,40 @@ export const vibeAgent = inngest.createFunction(
 
     const result = await network.run(event.data.value);
 
+    const isError =
+      result.state.data.summary ||
+      Object.keys(result.state.data.files).length === 0;
+
     const sandboxUrl = await step.run("get-sandbox-url", async () => {
       const sandbox = await getSandbox(sandboxId);
       const host = sandbox.getHost(3000);
       return `https://${host}`;
+    });
+
+    await step.run("save-result", async () => {
+      if (isError) {
+        return await prisma.message.create({
+          data: {
+            content: "Something went wrong. Please try again",
+            role: "ASSISTANT",
+            type: "ERROR",
+          },
+        });
+      }
+      return await prisma.message.create({
+        data: {
+          content: result.state.data.summary,
+          role: "ASSISTANT",
+          type: "RESULT",
+          fragment: {
+            create: {
+              sandboxUrl: sandboxUrl,
+              title: "Fragment",
+              files: result.state.data.files,
+            },
+          },
+        },
+      });
     });
 
     return {
