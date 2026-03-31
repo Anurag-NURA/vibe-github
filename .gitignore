@@ -40,11 +40,11 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+src/generated/
 
 # bun 
 bun.lock
 
 # junie
-./.junie/
-./.vscode/
+.junie/
+.vscode/
