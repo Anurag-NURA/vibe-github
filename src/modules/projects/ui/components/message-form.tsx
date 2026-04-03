@@ -17,7 +17,7 @@ interface Props {
 }
 
 const formSchema = z.object({
-  value: z
+  message_prompt: z
     .string()
     .min(1, { message: "Message is required" })
     .max(10000, { message: "Message is too long" }),
@@ -31,7 +31,7 @@ export const MessageForm = ({ projectId }: Props) => {
     resolver: zodResolver(formSchema),
     mode: "onChange",
     defaultValues: {
-      value: "",
+      message_prompt: "",
     },
   });
 
@@ -49,13 +49,17 @@ export const MessageForm = ({ projectId }: Props) => {
     }),
   );
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    await createMessage.mutateAsync({
-      value: values.value,
-      projectId,
-    });
-
-    form.reset();
+  const onSubmit = (submitted_data: z.infer<typeof formSchema>) => {
+    createMessage
+      .mutateAsync({
+        //executes the mutation and waits for it to complete before resetting the form by returning a promise
+        value: submitted_data.message_prompt,
+        projectId,
+      })
+      .then(() => {
+        toast.success("Message sent");
+        form.reset();
+      });
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -82,7 +86,7 @@ export const MessageForm = ({ projectId }: Props) => {
       >
         <FormField
           control={form.control}
-          name="value"
+          name="message_prompt"
           render={({ field }) => (
             <TextareaAutoSize
               {...field}
