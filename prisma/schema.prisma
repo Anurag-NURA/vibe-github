@@ -26,8 +26,8 @@ enum MessageType{
 model Project {
   id String @id @default(uuid())
   name String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
 
   messages Message[]
 }
@@ -37,8 +37,8 @@ model Message {
   content String 
   role MessageRole
   type MessageType
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
 
   projectId String
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
@@ -55,6 +55,6 @@ model Fragment {
   title String
   files Json
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @updatedAt @db.Timestamptz()
 }
