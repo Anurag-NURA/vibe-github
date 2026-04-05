@@ -4,32 +4,51 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 
 import { MessageCard } from "./message-card";
 import { MessageForm } from "./message-form";
+import { MessageLoading } from "./message-loading";
+import { Fragment } from "@/generated/prisma/browser";
 
 interface Props {
   projectId: string;
+  activeFragment: Fragment | null;
+  setActiveFragment: (fragment: Fragment | null) => void;
 }
 
-export const MessagesContainer = ({ projectId }: Props) => {
+export const MessagesContainer = ({
+  projectId,
+  activeFragment,
+  setActiveFragment,
+}: Props) => {
   const bottomRef = useRef<HTMLDivElement>(null);
   const trpc = useTRPC();
 
   const { data: messages } = useSuspenseQuery(
-    trpc.messages.getMany.queryOptions({ projectId: projectId }),
+    trpc.messages.getMany.queryOptions(
+      { projectId: projectId },
+      {
+        //TODO: temporary live update message
+        refetchInterval: 5000, // Refetch messages every 5 seconds to get new messages
+      },
+    ),
   );
 
-  useEffect(() => {
-    const lastAssitantMessage = messages.findLast(
-      (message) => message.role === "ASSISTANT",
-    );
+  // useEffect(() => {
+  //   const lastAssitantMessageWithFragment = messages.findLast(
+  //     (message) => message.role === "ASSISTANT" && !!message.fragment,
+  //     // other ways of stating !!message.fragment is message.fragment !== null and message.fragment !== undefined
+  //     //it means that we are checking if the message has a fragment or not, and if it does, we want to set it as the active fragment
+  //   );
 
-    if (lastAssitantMessage) {
-      //TODO: SET ACTIVE FRAGMENT
-    }
-  }, [messages]);
+  //   if (lastAssitantMessageWithFragment) {
+  //     setActiveFragment(lastAssitantMessageWithFragment.fragment);
+  //   }
+  // }, [messages, setActiveFragment]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView();
   }, [messages.length]);
+
+  const lastMessage = messages[messages.length - 1];
+  const isLastMessageFromUser = lastMessage?.role === "USER";
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -42,11 +61,12 @@ export const MessagesContainer = ({ projectId }: Props) => {
               role={message.role}
               fragment={message.fragment}
               createdAt={message.createdAt}
-              isActiveFragment={false}
-              onFragmentClick={() => {}}
+              isActiveFragment={activeFragment?.id === message.fragment?.id}
+              onFragmentClick={() => setActiveFragment(message.fragment)}
               type={message.type}
             />
           ))}
+          {isLastMessageFromUser && <MessageLoading />}
           <div ref={bottomRef} />
         </div>
       </div>
