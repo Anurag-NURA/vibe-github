@@ -17,7 +17,7 @@ Instead of treating AI output as plain text, Vibe structures it into a **message
 ### Chat + Code Explorer
 
 <p align="center">
-  <img src="./public/dark_code.png" width="900" />
+  <img src="./public/dark_code.jpg" width="900" />
 </p>
 
 ---
