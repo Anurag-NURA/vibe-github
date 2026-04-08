@@ -18,8 +18,9 @@ export const MessagesContainer = ({
   activeFragment,
   setActiveFragment,
 }: Props) => {
-  const bottomRef = useRef<HTMLDivElement>(null);
   const trpc = useTRPC();
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const lastAssitantMessageIdRef = useRef<string | null>(null);
 
   const { data: messages } = useSuspenseQuery(
     trpc.messages.getMany.queryOptions(
@@ -31,17 +32,20 @@ export const MessagesContainer = ({
     ),
   );
 
-  // useEffect(() => {
-  //   const lastAssitantMessageWithFragment = messages.findLast(
-  //     (message) => message.role === "ASSISTANT" && !!message.fragment,
-  //     // other ways of stating !!message.fragment is message.fragment !== null and message.fragment !== undefined
-  //     //it means that we are checking if the message has a fragment or not, and if it does, we want to set it as the active fragment
-  //   );
+  useEffect(() => {
+    const lastAssitantMessage = messages.findLast((message) => {
+      return message.role === "ASSISTANT";
+    });
 
-  //   if (lastAssitantMessageWithFragment) {
-  //     setActiveFragment(lastAssitantMessageWithFragment.fragment);
-  //   }
-  // }, [messages, setActiveFragment]);
+    //this makes sure that after 5 seconds when the new message is fetched, the active fragment will be updated to the new message's fragment if the last assistant message has a different fragment than the current active fragment
+    if (
+      lastAssitantMessage?.fragment &&
+      lastAssitantMessage.id !== lastAssitantMessageIdRef.current
+    ) {
+      setActiveFragment(lastAssitantMessage.fragment);
+      lastAssitantMessageIdRef.current = lastAssitantMessage.id;
+    }
+  }, [messages, setActiveFragment]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView();
