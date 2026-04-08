@@ -11,13 +11,13 @@ Instead of treating AI output as plain text, Vibe structures it into a **message
 ### Home Page
 
 <p align="center">
-  <img src="./public/images/home.png" width="900" />
+  <img src="./public/dark_home.png" width="900" />
 </p>
 
 ### Chat + Code Explorer
 
 <p align="center">
-  <img src="./public/images/code.png" width="900" />
+  <img src="./public/dark_code.png" width="900" />
 </p>
 
 ---
