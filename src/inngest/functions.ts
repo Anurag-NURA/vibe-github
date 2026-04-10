@@ -1,8 +1,6 @@
-import { Sandbox } from "@e2b/code-interpreter";
 import {
   createAgent,
   openai,
-  gemini,
   createState,
   createTool,
   createNetwork,
@@ -10,6 +8,7 @@ import {
   type Message,
 } from "@inngest/agent-kit";
 import { z } from "zod";
+import { Sandbox } from "@e2b/code-interpreter";
 
 import { inngest } from "./client";
 import { prisma } from "@/lib/prisma";
@@ -39,7 +38,7 @@ export const codeAgentFunction = inngest.createFunction(
 
         const messages = await prisma.message.findMany({
           where: { projectId: event.data.projectId },
-          orderBy: { createdAt: "desc" }, //TODO: Change to "asc" if AI does not understand what is the latest message
+          orderBy: { createdAt: "asc" }, //TODO: Change to "asc" if AI does not understand what is the latest message
         });
 
         for (const message of messages) {
@@ -225,21 +224,19 @@ export const codeAgentFunction = inngest.createFunction(
 
     const fragmentTitleGenerator = createAgent({
       name: "fragment-title-generator",
-      description: "A fragment title generator for the code agent",
+      description: "A fragment title generator",
       system: FRAGMENT_TITLE_PROMPT,
       model: openai({
         model: "gpt-4o-mini",
-        apiKey: process.env.OPENAI_API_KEY,
       }),
     });
 
     const responseGenerator = createAgent({
       name: "response-generator",
-      description: "A response generator for the code agent",
+      description: "A response generator",
       system: RESPONSE_PROMPT,
       model: openai({
         model: "gpt-4o-mini",
-        apiKey: process.env.OPENAI_API_KEY,
       }),
     });
 
@@ -251,32 +248,35 @@ export const codeAgentFunction = inngest.createFunction(
     );
 
     const generateFragmentTitle = () => {
-      if (fragmentTitleOutput[0].type !== "text") {
+      const output = fragmentTitleOutput[0];
+      if (output.type !== "text") {
         return "Fragment";
       }
 
-      if (Array.isArray(fragmentTitleOutput[0].content)) {
+      if (Array.isArray(output.content)) {
         // If the content is an array, join the text parts together
         // and return the resulting string as the title
-        return fragmentTitleOutput[0].content.map((txt) => txt).join("");
+        return output.content.map((txt) => txt).join("");
       } else {
-        return fragmentTitleOutput[0].content;
+        return output.content;
       }
     };
 
-    const generateResponseTitle = () => {
-      if (responseOutput[0].type !== "text") {
-        return "Fragment";
+    const generateResponse = () => {
+      const output = responseOutput[0];
+      if (output.type !== "text") {
+        return "Here you go";
       }
 
-      if (Array.isArray(responseOutput[0].content)) {
+      if (Array.isArray(output.content)) {
         // If the content is an array, join the text parts together
         // and return the resulting string as the title
-        return responseOutput[0].content.map((txt) => txt).join("");
+        return output.content.map((txt) => txt).join("");
       } else {
-        return responseOutput[0].content;
+        return output.content;
       }
     };
+
     const isError =
       !result.state.data.summary ||
       Object.keys(result.state.data.files || {}).length === 0;
@@ -301,7 +301,7 @@ export const codeAgentFunction = inngest.createFunction(
       return await prisma.message.create({
         data: {
           projectId: event.data.projectId,
-          content: generateResponseTitle(),
+          content: generateResponse(),
           role: "ASSISTANT",
           type: "RESULT",
           fragment: {
