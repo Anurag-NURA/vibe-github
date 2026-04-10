@@ -8,20 +8,26 @@ const PRO_POINTS = 100;
 const DURATION = 30 * 24 * 60 * 60; //30 days
 const GENERATE_COST = 1;
 
-const { has } = await auth();
-const hasProAccess = has({ plan: "pro" });
-
 // Singleton pattern
 // We create a single instance of RateLimiterPrisma and reuse it for all requests
-const usageTracker = new RateLimiterPrisma({
+const freeLimiter = new RateLimiterPrisma({
   storeClient: prisma,
   tableName: "usage",
-  points: hasProAccess ? PRO_POINTS : FREE_POINTS, // Pro users get more points
+  points: FREE_POINTS, // Pro users get more points
+  duration: DURATION,
+});
+
+const proLimiter = new RateLimiterPrisma({
+  storeClient: prisma,
+  tableName: "usage",
+  points: PRO_POINTS, // Pro users get more points
   duration: DURATION,
 });
 
 export async function getUsageTracker() {
-  return usageTracker;
+  const { has } = await auth();
+  const hasProAccess = has({ plan: "pro" });
+  return hasProAccess ? proLimiter : freeLimiter;
 }
 
 export async function consumeCredits() {
