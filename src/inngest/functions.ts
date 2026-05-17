@@ -14,6 +14,7 @@ import { inngest } from "./client";
 import { prisma } from "@/lib/prisma";
 import { getSandbox, lastAssistantTextMessageContent } from "./utils";
 import { RESPONSE_PROMPT, FRAGMENT_TITLE_PROMPT, PROMPT } from "@/prompt";
+import { SANBOX_TIMEOUT } from "./types";
 
 interface AgentState {
   summary: string;
@@ -28,6 +29,7 @@ export const codeAgentFunction = inngest.createFunction(
       const sandbox = await Sandbox.create("anuragrawatz3k/vibe-nextjs-test", {
         apiKey: process.env.E2B_API_KEY,
       });
+      await sandbox.setTimeout(SANBOX_TIMEOUT); //30 minutes
       return sandbox.sandboxId;
     });
 
@@ -38,7 +40,8 @@ export const codeAgentFunction = inngest.createFunction(
 
         const messages = await prisma.message.findMany({
           where: { projectId: event.data.projectId },
-          orderBy: { createdAt: "asc" }, //TODO: Change to "asc" if AI does not understand what is the latest message
+          orderBy: { createdAt: "desc" }, //TODO: Change to "asc" if AI does not understand what is the latest message
+          take: 5,
         });
 
         for (const message of messages) {
@@ -48,7 +51,7 @@ export const codeAgentFunction = inngest.createFunction(
             content: message.content,
           });
         }
-        return formattedMessages;
+        return formattedMessages.reverse();
       },
     );
 
