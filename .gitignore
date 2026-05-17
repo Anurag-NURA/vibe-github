@@ -48,3 +48,6 @@ bun.lock
 # junie
 .junie/
 .vscode/
+
+# clerk configuration (can include secrets)
+/.clerk/

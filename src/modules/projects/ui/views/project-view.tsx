@@ -1,5 +1,6 @@
 "use client";
 import { Suspense, useState } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import Link from "next/link";
 import { useAuth } from "@clerk/nextjs";
 import { Fragment } from "@/generated/prisma/browser";
@@ -36,16 +37,20 @@ export const ProjectView = ({ projectId }: Props) => {
           minSize={20}
           className="flex flex-col min-h-0"
         >
-          <Suspense fallback={<div>Loading project...</div>}>
-            <ProjectHeader projectId={projectId} />
-          </Suspense>
-          <Suspense fallback={<div>Loading messages...</div>}>
-            <MessagesContainer
-              projectId={projectId}
-              activeFragment={activeFragment}
-              setActiveFragment={setActiveFragment}
-            />
-          </Suspense>
+          <ErrorBoundary fallback={<div>Project header error</div>}>
+            <Suspense fallback={<div>Loading project...</div>}>
+              <ProjectHeader projectId={projectId} />
+            </Suspense>
+          </ErrorBoundary>
+          <ErrorBoundary fallback={<div>Messages container error</div>}>
+            <Suspense fallback={<div>Loading messages...</div>}>
+              <MessagesContainer
+                projectId={projectId}
+                activeFragment={activeFragment}
+                setActiveFragment={setActiveFragment}
+              />
+            </Suspense>
+          </ErrorBoundary>
         </ResizablePanel>
 
         <ResizableHandle className="hover:bg-primary transition-colors" />
