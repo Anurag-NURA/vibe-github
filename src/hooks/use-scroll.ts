@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { set } from "zod";
 
 export const useScroll = (threshold: number = 10) => {
   const [isScrollred, setIsScrollred] = useState(false);

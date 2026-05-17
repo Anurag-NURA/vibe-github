@@ -5,8 +5,6 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
-  EditIcon,
-  Sun,
   SunMoonIcon,
 } from "lucide-react";
 

@@ -1,5 +1,4 @@
 import { SignIn } from "@clerk/nextjs";
-import { Divide } from "lucide-react";
 
 export default function Page() {
   return (
